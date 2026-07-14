@@ -1,0 +1,277 @@
+@startuml
+package "App.Models" {
+class Aset {
+# $table
+# $fillable
++ komponen()
+}
+
+class EstimasiBiaya {
+# $table
+# $fillable
+# $casts
++ aset()
++ komponen()
+}
+
+class FmeaAnalisis {
+# $table
+# $fillable
+# $casts
+# $appends
++ komponenRel()
++ aset()
++ komponen()
++ jadwalMaintenance()
+# static booted()
++ getNamaAsetAttribute()
++ getNamaKomponenAttribute()
++ getKategoriStyleAttribute()
++ scopeByKategori($query, $kategori)
++ scopeByAset($query, $kodeAset)
++ scopeByKomponen($query, $kodeKomponen)
++ scopeTanpaJadwal($query)
++ scopeRpnTinggi($query)
+}
+
+class JadwalMaintenance {
+# $table
+# $fillable
+# $appends
+# $casts
++ fmeaAnalisis()
++ aset()
++ komponen()
++ getNamaAsetAttribute()
++ getNamaKomponenAttribute()
++ getStatusAttribute()
++ setStatusAttribute($value)
++ getStatusStyleAttribute()
++ getPrioritasStyleAttribute()
++ isOverdue()
++ isUpcoming($days = 7)
++ getDaysUntilAttribute()
++ scopeAktif($query)
++ scopeTerlambat($query)
++ scopeMendatang($query, $days = 7)
++ scopeByStatus($query, $status)
++ scopeByPrioritas($query, $prioritas)
++ scopeByMesin($query, $kodeMesin)
++ scopeByTeknisi($query, $teknisi)
+}
+
+class Kerusakan {
+# $table
+# $fillable
+# $appends
+# $casts
++ aset()
++ komponen()
++ user()
++ getNamaAsetAttribute()
++ getNamaKomponenAttribute()
++ getTeknisiNameAttribute()
+}
+
+class Komponen {
+# $table
+# $fillable
++ aset()
+}
+
+class RiwayatPekerjaan {
+# $table
+# $fillable
+# $appends
+# $casts
++ static normalizeStatus($status)
++ getStatusAttribute()
++ setStatusAttribute($value)
++ getTanggalPekerjaanAttribute()
++ setTanggalPekerjaanAttribute($value)
++ getTindakanAttribute()
++ setTindakanAttribute($value)
++ getHasilPekerjaanAttribute()
++ setHasilPekerjaanAttribute($value)
++ getDurasiJamAttribute()
++ setDurasiJamAttribute($value)
++ getBiayaAttribute()
++ setBiayaAttribute($value)
++ jadwal()
+}
+
+class User {
+# $fillable
+# $hidden
+# $casts
+}
+}
+
+package "App.Http.Controllers" {
+abstract class Controller
+
+class AsetController {
++ index()
++ getKomponenByAset($kode_aset)
++ store(Request $request)
++ update(Request $request, $kode_aset)
++ destroy(Request $request, $kode_aset)
+- getNextAsetCode(): string
+- getNextKomponenCode(): string
+}
+
+class DashboardTeknisiController {
++ index()
+}
+
+class DataTeknisiController {
++ index()
++ list(Request $request)
++ store(Request $request)
++ update(Request $request, $id)
++ destroy($id)
+}
+
+class EstimasiBiayaController {
++ index(Request $request)
++ store(Request $request)
++ update(Request $request, EstimasiBiaya $estimasi)
++ destroy(EstimasiBiaya $estimasi)
+}
+
+class FmeaAnalisisController {
+- getKategoriRisiko($rpn)
+- getIntervalMaintenance($kategori)
+- getRekomendasi($kategori, $modeKegagalan = null)
++ view()
++ inputTeknisi()
++ index()
++ store(Request $request)
++ update(Request $request, FmeaAnalisis $fmeaAnalisis)
++ destroy(FmeaAnalisis $fmeaAnalisis)
++ show(FmeaAnalisis $fmeaAnalisis)
+}
+
+class JadwalMaintenanceController {
++ store(Request $request)
++ index(Request $request)
++ show(JadwalMaintenance $jadwalMaintenance)
++ update(Request $request, JadwalMaintenance $jadwalMaintenance)
++ destroy(JadwalMaintenance $jadwalMaintenance)
++ updateStatus(Request $request, JadwalMaintenance $jadwalMaintenance)
++ getJadwalMendatang(Request $request)
++ getJadwalTerlambat()
++ getStatistik()
++ getByMesin($kodeMesin)
++ getByTeknisi($teknisi)
+}
+
+class KerusakanController {
++ indexView()
++ inputView()
++ index(Request $request)
++ store(Request $request)
++ update(Request $request, Kerusakan $kerusakan)
+- getKategoriRisiko($rpn)
+- getIntervalMaintenance($kategori)
+- getRekomendasi($kategori, $modeKegagalan = null)
++ destroy(Kerusakan $kerusakan)
+}
+
+class LaporanController {
++ view()
++ api(Request $request)
++ cetakPdf(Request $request)
++ exportExcel(Request $request)
+}
+
+class LoginController {
++ login(Request $request)
+}
+
+class RiwayatPekerjaanController {
++ index(Request $request)
++ show(RiwayatPekerjaan $riwayatPekerjaan)
++ store(Request $request)
++ update(Request $request, RiwayatPekerjaan $riwayatPekerjaan)
+}
+}
+
+package "App.Providers" {
+class AppServiceProvider {
++ register(): void
++ boot(): void
+}
+}
+
+class Model <<external>>
+class Authenticatable <<external>>
+class ServiceProvider <<external>>
+
+Aset -|> Model
+EstimasiBiaya -|> Model
+FmeaAnalisis -|> Model
+JadwalMaintenance -|> Model
+Kerusakan -|> Model
+Komponen -|> Model
+RiwayatPekerjaan -|> Model
+User -|> Authenticatable
+AppServiceProvider -|> ServiceProvider
+
+Aset "1" o-- "*" Komponen : hasMany
+Komponen "*" --> "1" Aset : belongsTo
+
+FmeaAnalisis "1" --> "0..*" JadwalMaintenance : generates
+JadwalMaintenance "*" --> "1" FmeaAnalisis : belongsTo
+
+JadwalMaintenance "*" --> "1" Aset : belongsTo
+JadwalMaintenance "*" --> "1" Komponen : belongsTo
+
+FmeaAnalisis "*" --> "1" Aset : belongsTo
+FmeaAnalisis "*" --> "1" Komponen : belongsTo
+
+EstimasiBiaya "*" --> "1" Aset : belongsTo
+EstimasiBiaya "*" --> "1" Komponen : belongsTo
+
+Kerusakan "*" --> "1" Aset : belongsTo
+Kerusakan "*" --> "1" Komponen : belongsTo
+Kerusakan "*" --> "1" User : belongsTo
+
+RiwayatPekerjaan "*" --> "1" JadwalMaintenance : belongsTo
+
+AsetController ..> Aset
+AsetController ..> Komponen
+
+DashboardTeknisiController ..> JadwalMaintenance
+DashboardTeknisiController ..> Kerusakan
+DashboardTeknisiController ..> RiwayatPekerjaan
+
+DataTeknisiController ..> User
+
+EstimasiBiayaController ..> EstimasiBiaya
+
+FmeaAnalisisController ..> FmeaAnalisis
+FmeaAnalisisController ..> Aset
+FmeaAnalisisController ..> Komponen
+FmeaAnalisisController ..> JadwalMaintenance
+
+JadwalMaintenanceController ..> JadwalMaintenance
+JadwalMaintenanceController ..> FmeaAnalisis
+
+KerusakanController ..> Kerusakan
+KerusakanController ..> Aset
+KerusakanController ..> FmeaAnalisis
+KerusakanController ..> JadwalMaintenance
+
+LaporanController ..> Aset
+LaporanController ..> Kerusakan
+LaporanController ..> FmeaAnalisis
+LaporanController ..> JadwalMaintenance
+LaporanController ..> EstimasiBiaya
+LaporanController ..> RiwayatPekerjaan
+
+LoginController ..> User
+
+RiwayatPekerjaanController ..> RiwayatPekerjaan
+RiwayatPekerjaanController ..> JadwalMaintenance
+@enduml
